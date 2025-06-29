@@ -1,4 +1,3 @@
-
 import apiClient from './api';
 import { Course } from '@/types/course';
 
@@ -24,6 +23,16 @@ export const updateCourse = async (id: number, data: Partial<Course>) => {
 
 export const deleteCourse = async (id: number) => {
   const response = await apiClient.delete(`/courses/${id}`);
+  return response.data;
+};
+
+export const acceptCourse = async (id: number) => {
+  const response = await apiClient.patch(`/courses/${id}/accept`);
+  return response.data;
+};
+
+export const rejectCourse = async (id: number) => {
+  const response = await apiClient.patch(`/courses/${id}/reject`);
   return response.data;
 };
 

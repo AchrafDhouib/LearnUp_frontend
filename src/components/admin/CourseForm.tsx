@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +6,7 @@ import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createCourse, updateCourse, getCourse } from "@/services/courseService";
 import { getSpecialties } from "@/services/specialtyService";
-import { getTeachers } from "@/services/userService";
+import { getActiveTeachers } from "@/services/userService";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +36,7 @@ const courseSchema = z.object({
   speciality_id: z.string().min(1, "Veuillez sélectionner une spécialité"),
   creator_id: z.string().min(1, "Veuillez sélectionner un enseignant"),
   image: z.string().optional(),
+  cours_url: z.string().optional(),
 });
 
 interface CourseFormProps {
@@ -58,6 +58,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
       speciality_id: "",
       creator_id: "",
       image: "",
+      cours_url: "",
     },
   });
 
@@ -67,31 +68,32 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
     queryFn: getSpecialties,
   });
 
-  // Get teachers for dropdown
+  // Get active teachers for dropdown
   const { data: teachers = [] } = useQuery({
-    queryKey: ["teachers"],
-    queryFn: getTeachers,
+    queryKey: ["activeTeachers"],
+    queryFn: getActiveTeachers,
   });
 
   // If editing, fetch course data
-  const { isLoading: isLoadingCourse } = useQuery({
+  const { data: courseData, isLoading: isLoadingCourse } = useQuery({
     queryKey: ["course", courseId],
     queryFn: () => courseId ? getCourse(courseId) : null,
     enabled: !!courseId && isEdit,
-    meta: {
-      onSettled: (data: any) => {
-        if (data) {
-          form.reset({
-            name: data.name || "",
-            description: data.description || "",
-            speciality_id: data.speciality_id ? String(data.speciality_id) : "",
-            creator_id: data.creator_id ? String(data.creator_id) : "",
-            image: data.image || "",
-          });
-        }
-      }
-    }
   });
+
+  // Update form when course data is loaded
+  useEffect(() => {
+    if (courseData && isEdit) {
+      form.reset({
+        name: courseData.name || "",
+        description: courseData.description || "",
+        speciality_id: courseData.speciality_id ? String(courseData.speciality_id) : "",
+        creator_id: courseData.creator_id ? String(courseData.creator_id) : "",
+        image: courseData.image || "",
+        cours_url: courseData.cours_url || "",
+      });
+    }
+  }, [courseData, isEdit, form]);
 
   // Create course mutation
   const createCourseMutation = useMutation({
@@ -281,7 +283,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                             ))
                           ) : (
                             <SelectItem value="no-teacher">
-                              Aucun enseignant disponible
+                              Aucun enseignant actif disponible
                             </SelectItem>
                           )}
                         </SelectContent>
@@ -300,6 +302,20 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                     <FormLabel>Image du cours (URL)</FormLabel>
                     <FormControl>
                       <Input placeholder="https://example.com/image.jpg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cours_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL du cours (PDF/Matériel)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/course-material.pdf" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

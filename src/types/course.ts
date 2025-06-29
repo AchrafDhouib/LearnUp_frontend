@@ -1,4 +1,3 @@
-
 import { Specialty } from './specialty';
 import { User } from './user';
 
@@ -18,10 +17,12 @@ export interface Lesson {
 export interface Course {
   id: number;
   name: string;
+  cours_url?: string;
   speciality_id: number;
   creator_id: number;
   description: string;
   image: string;
+  is_accepted?: 0 | 1 | null;
   created_at: string;
   updated_at: string;
   speciality?: Specialty;

@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, Trash2, Edit } from "lucide-react";
+import { Search, Plus, Trash2, Edit, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ import { Discipline } from "@/types/discipline";
 const DisciplinesIndex = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch disciplines data
@@ -128,7 +129,14 @@ const DisciplinesIndex = () => {
                       <Button 
                         variant="outline" 
                         size="icon" 
-                        onClick={() => window.location.href = `/admin/disciplines/edit/${discipline.id}`}
+                        onClick={() => navigate(`/admin/disciplines/${discipline.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => navigate(`/admin/disciplines/edit/${discipline.id}`)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

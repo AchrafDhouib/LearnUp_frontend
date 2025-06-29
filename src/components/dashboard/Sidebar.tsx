@@ -1,4 +1,3 @@
-
 import { BookOpen, ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,10 +34,10 @@ const Sidebar = ({
       )}
     >
       <div className="flex items-center justify-between h-16 px-4 border-b">
-        <div className={cn("flex items-center", collapsed && "justify-center w-full")}>
+        <Link to="/" className={cn("flex items-center", collapsed && "justify-center w-full")}>
           <BookOpen className="h-6 w-6 text-primary" />
           {!collapsed && <span className="ml-2 font-bold text-lg">LearnCertify</span>}
-        </div>
+        </Link>
         <button 
           onClick={() => setCollapsed(!collapsed)}
           className="text-gray-500 hover:text-gray-700 lg:block hidden"

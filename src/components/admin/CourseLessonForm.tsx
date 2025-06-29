@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createLesson, updateLesson, deleteLesson } from "@/services/courseService";
+import { createLesson, updateLesson, deleteLesson } from "@/services/lessonService";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,10 +94,15 @@ const CourseLessonForm = ({ courseId, lessons = [], onLessonsUpdated }: CourseLe
 
   // Form submission handler
   const onSubmit = (data: z.infer<typeof lessonSchema>) => {
+    const lessonData = {
+      ...data,
+      duration: parseInt(data.duration),
+    };
+    
     if (editingLessonId) {
-      updateLessonMutation.mutate({ lessonId: editingLessonId, data });
+      updateLessonMutation.mutate({ lessonId: editingLessonId, data: lessonData });
     } else {
-      createLessonMutation.mutate({ ...data, course_id: courseId });
+      createLessonMutation.mutate(lessonData);
     }
   };
 
@@ -108,7 +112,7 @@ const CourseLessonForm = ({ courseId, lessons = [], onLessonsUpdated }: CourseLe
     form.reset({
       title: lesson.title,
       description: lesson.description,
-      duration: lesson.duration,
+      duration: String(lesson.duration),
       url_video: lesson.url_video || "",
       url_pdf: lesson.url_pdf || "",
     });

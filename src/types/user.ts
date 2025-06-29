@@ -1,4 +1,3 @@
-
 export interface User {
   id: number;
   name: string;
@@ -7,7 +6,11 @@ export interface User {
   email: string;
   avatar: string;
   is_active: boolean | number;
-  role?: string[];
+  role?: string;
+  groups?: any[];
+  created_groups?: any[];
+  passed_exams?: any[];
+  courses?: any[];
   created_at: string;
   updated_at: string;
 }
