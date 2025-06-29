@@ -1,8 +1,12 @@
-
 import apiClient from './api';
 
 export const getUsers = async () => {
-  const response = await apiClient.get('/users');
+  const response = await apiClient.get('/auth/users');
+  return response.data;
+};
+
+export const getUsersByRole = async (role: string) => {
+  const response = await apiClient.get(`/auth/users?role=${role}`);
   return response.data;
 };
 
@@ -37,11 +41,25 @@ export const deleteUser = async (id: number) => {
 };
 
 export const getTeachers = async () => {
-  const users = await getUsers();
-  return users.filter(user => user.role?.includes('teacher'));
+  const response = await apiClient.get('/auth/users?role=teacher');
+  return response.data;
+};
+
+export const getActiveTeachers = async () => {
+  const response = await apiClient.get('/auth/users?role=teacher');
+  return response.data.filter((teacher: any) => teacher.is_active === 1);
 };
 
 export const getStudents = async () => {
-  const users = await getUsers();
-  return users.filter(user => user.role?.includes('student'));
+  const response = await apiClient.get('/auth/users?role=student');
+  return response.data;
+};
+
+export const changePassword = async (id: number, passwordData: {
+  current_password: string;
+  new_password: string;
+  new_password_confirmation: string;
+}) => {
+  const response = await apiClient.patch(`/users/${id}/change-password`, passwordData);
+  return response.data;
 };

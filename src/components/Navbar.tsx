@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +9,8 @@ import {
   User,
   ChevronDown,
   LogOut,
-  Settings 
+  Settings,
+  LayoutDashboard
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +44,18 @@ const Navbar = () => {
       return `${user.first_name} ${user.last_name}`;
     }
     return user.name || "";
+  };
+
+  // Function to get dashboard link based on user role
+  const getDashboardLink = () => {
+    if (user?.role?.includes('admin')) {
+      return "/admin/dashboard";
+    } else if (user?.role?.includes('teacher')) {
+      return "/teacher/dashboard";
+    } else if (user?.role?.includes('student')) {
+      return "/student/dashboard";
+    }
+    return "/";
   };
 
   return (
@@ -89,6 +101,12 @@ const Navbar = () => {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <Link to={getDashboardLink()}>
+                    <DropdownMenuItem>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Tableau de bord</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <Link to={user?.role?.includes('teacher') ? "/teacher/profile" : "/student/profile"}>
                     <DropdownMenuItem>
                       <User className="mr-2 h-4 w-4" />
@@ -171,6 +189,13 @@ const Navbar = () => {
             
             {isAuthenticated ? (
               <>
+                <Link 
+                  to={getDashboardLink()}
+                  className="text-gray-700 hover:text-primary-dark py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Tableau de bord
+                </Link>
                 {user?.role?.includes('teacher') && (
                   <Link 
                     to="/teacher/dashboard" 

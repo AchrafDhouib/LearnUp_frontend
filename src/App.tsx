@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,15 +22,19 @@ import Contact from "./pages/Contact";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/Dashboard";
 import DisciplinesIndex from "./pages/admin/disciplines/index";
+import DisciplineIndex from "./pages/admin/disciplines/[id]";
 import CreateDiscipline from "./pages/admin/disciplines/create";
 import EditDiscipline from "./pages/admin/disciplines/edit/[id]";
 import SpecialtiesIndex from "./pages/admin/specialties/index";
+import SpecialtyIndex from "./pages/admin/specialties/[id]";
 import CreateSpecialty from "./pages/admin/specialties/create";
 import EditSpecialty from "./pages/admin/specialties/edit/[id]";
 import CoursesIndex from "./pages/admin/courses/index";
+import CourseIndex from "./pages/admin/courses/[id]";
 import CreateCourse from "./pages/admin/courses/create";
 import EditCourse from "./pages/admin/courses/edit/[id]";
 import UsersIndex from "./pages/admin/users/index";
+import UserDetails from "./pages/admin/users/[id]";
 import SettingsPage from "./pages/admin/settings/index";
 
 // Student pages
@@ -95,15 +98,19 @@ const App = () => (
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/disciplines" element={<DisciplinesIndex />} />
+            <Route path="/admin/disciplines/:id" element={<DisciplineIndex />} />
             <Route path="/admin/disciplines/create" element={<CreateDiscipline />} />
             <Route path="/admin/disciplines/edit/:id" element={<EditDiscipline />} />
             <Route path="/admin/specialties" element={<SpecialtiesIndex />} />
+            <Route path="/admin/specialties/:id" element={<SpecialtyIndex />} />
             <Route path="/admin/specialties/create" element={<CreateSpecialty />} />
             <Route path="/admin/specialties/edit/:id" element={<EditSpecialty />} />
             <Route path="/admin/courses" element={<CoursesIndex />} />
+            <Route path="/admin/courses/:id" element={<CourseIndex />} />
             <Route path="/admin/courses/create" element={<CreateCourse />} />
             <Route path="/admin/courses/edit/:id" element={<EditCourse />} />
             <Route path="/admin/users" element={<UsersIndex />} />
+            <Route path="/admin/users/:id" element={<UserDetails />} />
             <Route path="/admin/settings" element={<SettingsPage />} />
             
             <Route path="/course/:id" element={<CourseView />} />
