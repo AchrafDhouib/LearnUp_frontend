@@ -112,6 +112,18 @@ const CourseView = () => {
                   <Award className="h-5 w-5 mr-2 text-gray-500" />
                   <span>Niveau: Intermédiaire</span>
                 </div>
+                {course.price && (
+                  <div className="flex items-center">
+                    <span className="font-medium text-lg">
+                      {course.price}€
+                      {course.discount && (
+                        <span className="text-green-600 ml-2 text-sm">
+                          (-{course.discount}%)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
               
               {!isEnrolled ? (
@@ -120,7 +132,7 @@ const CourseView = () => {
                   className="bg-primary hover:bg-primary-dark"
                   onClick={handleEnroll}
                 >
-                  S'inscrire gratuitement
+                  {course.price ? `S'inscrire - ${course.price}€` : 'S\'inscrire gratuitement'}
                 </Button>
               ) : (
                 <div className="flex gap-4">

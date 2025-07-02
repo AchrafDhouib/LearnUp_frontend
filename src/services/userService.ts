@@ -55,11 +55,11 @@ export const getStudents = async () => {
   return response.data;
 };
 
-export const changePassword = async (id: number, passwordData: {
+export const changePassword = async (passwordData: {
   current_password: string;
   new_password: string;
   new_password_confirmation: string;
 }) => {
-  const response = await apiClient.patch(`/users/${id}/change-password`, passwordData);
+  const response = await apiClient.patch('/auth/change-password', passwordData);
   return response.data;
 };

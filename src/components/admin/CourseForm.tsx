@@ -37,6 +37,8 @@ const courseSchema = z.object({
   creator_id: z.string().min(1, "Veuillez sélectionner un enseignant"),
   image: z.string().optional(),
   cours_url: z.string().optional(),
+  price: z.string().optional(),
+  discount: z.string().optional(),
 });
 
 interface CourseFormProps {
@@ -59,20 +61,38 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
       creator_id: "",
       image: "",
       cours_url: "",
+      price: "",
+      discount: "",
     },
   });
 
   // Get specialties for dropdown
-  const { data: specialties = [] } = useQuery({
+  const { data: specialties = [], isLoading: isLoadingSpecialties, error: specialtiesError } = useQuery({
     queryKey: ["specialties"],
     queryFn: getSpecialties,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Get active teachers for dropdown
-  const { data: teachers = [] } = useQuery({
+  const { data: teachers = [], isLoading: isLoadingTeachers, error: teachersError } = useQuery({
     queryKey: ["activeTeachers"],
     queryFn: getActiveTeachers,
+    retry: 3,
+    retryDelay: 1000,
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Specialties loaded:", specialties);
+    console.log("Teachers loaded:", teachers);
+    if (specialtiesError) {
+      console.error("Specialties error:", specialtiesError);
+    }
+    if (teachersError) {
+      console.error("Teachers error:", teachersError);
+    }
+  }, [specialties, teachers, specialtiesError, teachersError]);
 
   // If editing, fetch course data
   const { data: courseData, isLoading: isLoadingCourse } = useQuery({
@@ -84,16 +104,31 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
   // Update form when course data is loaded
   useEffect(() => {
     if (courseData && isEdit) {
+      console.log("Loading course data for edit:", courseData); // Debug log
+      console.log("Speciality ID:", courseData.speciality_id); // Debug log
+      console.log("Creator ID:", courseData.creator_id); // Debug log
+      console.log("Available specialties:", specialties); // Debug log
+      console.log("Available teachers:", teachers); // Debug log
+      
+      // Check if the specialty and teacher exist in the dropdowns
+      const specialtyExists = specialties.some((s: any) => s.id === courseData.speciality_id);
+      const teacherExists = teachers.some((t: any) => t.id === courseData.creator_id);
+      
+      console.log("Specialty exists in dropdown:", specialtyExists);
+      console.log("Teacher exists in dropdown:", teacherExists);
+      
       form.reset({
         name: courseData.name || "",
         description: courseData.description || "",
-        speciality_id: courseData.speciality_id ? String(courseData.speciality_id) : "",
-        creator_id: courseData.creator_id ? String(courseData.creator_id) : "",
+        speciality_id: courseData.speciality_id && specialtyExists ? String(courseData.speciality_id) : "",
+        creator_id: courseData.creator_id && teacherExists ? String(courseData.creator_id) : "",
         image: courseData.image || "",
         cours_url: courseData.cours_url || "",
+        price: courseData.price ? String(courseData.price) : "",
+        discount: courseData.discount ? String(courseData.discount) : "",
       });
     }
-  }, [courseData, isEdit, form]);
+  }, [courseData, isEdit, form, specialties, teachers]);
 
   // Create course mutation
   const createCourseMutation = useMutation({
@@ -143,6 +178,8 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
       ...data,
       speciality_id: parseInt(data.speciality_id),
       creator_id: parseInt(data.creator_id),
+      price: data.price ? parseFloat(data.price) : null,
+      discount: data.discount ? parseFloat(data.discount) : null,
     };
 
     if (isEdit && courseId) {
@@ -235,7 +272,11 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {specialties.length > 0 ? (
+                          {specialtiesError ? (
+                            <SelectItem value="error" disabled>
+                              Erreur de chargement des spécialités
+                            </SelectItem>
+                          ) : specialties.length > 0 ? (
                             specialties.map((specialty: any) => (
                               <SelectItem 
                                 key={specialty.id} 
@@ -245,8 +286,8 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="no-specialty">
-                              Aucune spécialité disponible
+                            <SelectItem value="no-specialty" disabled>
+                              Chargement des spécialités...
                             </SelectItem>
                           )}
                         </SelectContent>
@@ -272,7 +313,11 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {teachers.length > 0 ? (
+                          {teachersError ? (
+                            <SelectItem value="error" disabled>
+                              Erreur de chargement des enseignants
+                            </SelectItem>
+                          ) : teachers.length > 0 ? (
                             teachers.map((teacher: any) => (
                               <SelectItem 
                                 key={teacher.id} 
@@ -282,8 +327,8 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="no-teacher">
-                              Aucun enseignant actif disponible
+                            <SelectItem value="no-teacher" disabled>
+                              Chargement des enseignants...
                             </SelectItem>
                           )}
                         </SelectContent>
@@ -321,6 +366,49 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prix (optionnel)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="discount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Remise (%) (optionnel)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </CardContent>
           </Card>
 

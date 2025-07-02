@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -9,27 +8,135 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Trash2, ArrowLeft, Save } from "lucide-react";
-import { courseCategories } from "@/data/mockData";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { createCourse } from "@/services/courseService";
+import { getSpecialties } from "@/services/specialtyService";
+import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CreateCourse = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [teacherId, setTeacherId] = useState<number | null>(null);
+  
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    speciality_id: "",
+    cours_url: "",
+    image: "",
+    price: "",
+    discount: "",
+  });
+
   const [lessons, setLessons] = useState([{ title: "", content: "", duration: "" }]);
+
+  // Get teacher ID from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      setTeacherId(user.id);
+    }
+  }, []);
+
+  // Fetch specialities
+  const { data: specialities = [], isLoading: isLoadingSpecialities } = useQuery({
+    queryKey: ['specialities'],
+    queryFn: getSpecialties,
+  });
+
+  // Create course mutation
+  const createMutation = useMutation({
+    mutationFn: createCourse,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-courses'] });
+      toast({
+        title: "Cours créé",
+        description: "Le cours a été créé avec succès.",
+      });
+      navigate("/teacher/courses");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.response?.data?.message || "Impossible de créer le cours.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const addLesson = () => {
     setLessons([...lessons, { title: "", content: "", duration: "" }]);
   };
 
-  const removeLesson = (index) => {
+  const removeLesson = (index: number) => {
     const updatedLessons = [...lessons];
     updatedLessons.splice(index, 1);
     setLessons(updatedLessons);
   };
 
-  const handleSaveCourse = () => {
-    // Simuler l'enregistrement du cours
-    alert("Cours enregistré avec succès!");
-    navigate("/teacher/courses");
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveCourse = () => {
+    if (!teacherId) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les informations de l'enseignant.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const courseData = {
+      ...formData,
+      creator_id: teacherId,
+      price: formData.price ? parseFloat(formData.price) : null,
+      discount: formData.discount ? parseFloat(formData.discount) : null,
+    };
+
+    createMutation.mutate(courseData);
+  };
+
+  if (isLoadingSpecialities) {
+    return (
+      <DashboardLayout userType="teacher">
+        <div className="space-y-8">
+          <div className="flex items-center">
+            <Skeleton className="h-10 w-10 mr-4" />
+            <div>
+              <Skeleton className="h-8 w-64 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-4 w-60" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout userType="teacher">
@@ -58,67 +165,102 @@ const CreateCourse = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label htmlFor="title">Titre du cours</Label>
+              <Label htmlFor="name">Nom du cours</Label>
               <Input 
-                id="title" 
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
                 placeholder="Exemple: Introduction au développement web moderne" 
+                required
               />
             </div>
             
             <div>
               <Label htmlFor="description">Description</Label>
               <Textarea 
-                id="description" 
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
                 placeholder="Décrivez votre cours de manière détaillée..."
                 className="min-h-[120px]"
+                required
               />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="category">Catégorie</Label>
-                <Select>
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Sélectionner une catégorie" />
+                <Label htmlFor="speciality_id">Spécialité</Label>
+                <Select
+                  value={formData.speciality_id}
+                  onValueChange={(value) => handleSelectChange('speciality_id', value)}
+                >
+                  <SelectTrigger id="speciality_id">
+                    <SelectValue placeholder="Sélectionner une spécialité" />
                   </SelectTrigger>
                   <SelectContent>
-                    {courseCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
+                    {specialities.map((speciality: any) => (
+                      <SelectItem key={speciality.id} value={speciality.id.toString()}>
+                        {speciality.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="level">Niveau</Label>
-                <Select>
-                  <SelectTrigger id="level">
-                    <SelectValue placeholder="Sélectionner un niveau" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Débutant">Débutant</SelectItem>
-                    <SelectItem value="Intermédiaire">Intermédiaire</SelectItem>
-                    <SelectItem value="Avancé">Avancé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Prix (€)</Label>
-                <Input id="price" type="number" min="0" step="0.01" placeholder="0.00" />
-              </div>
-              <div>
-                <Label htmlFor="duration">Durée totale (heures)</Label>
-                <Input id="duration" type="number" min="0" step="0.5" placeholder="1.5" />
+                <Label htmlFor="cours_url">URL du matériel</Label>
+                <Input 
+                  id="cours_url"
+                  name="cours_url"
+                  value={formData.cours_url}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/material"
+                  type="url"
+                />
               </div>
             </div>
             
             <div>
               <Label htmlFor="image">Image du cours (URL)</Label>
-              <Input id="image" placeholder="https://example.com/image.jpg" />
+              <Input 
+                id="image"
+                name="image"
+                value={formData.image}
+                onChange={handleInputChange}
+                placeholder="https://example.com/image.jpg"
+                type="url"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price">Prix (optionnel)</Label>
+                <Input 
+                  id="price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label htmlFor="discount">Remise (%) (optionnel)</Label>
+                <Input 
+                  id="discount"
+                  name="discount"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.discount}
+                  onChange={handleInputChange}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -198,25 +340,29 @@ const CreateCourse = () => {
             
             <Button 
               variant="outline" 
-              className="w-full mt-4"
               onClick={addLesson}
+              className="w-full"
             >
               <PlusCircle className="h-4 w-4 mr-2" />
               Ajouter une leçon
             </Button>
           </CardContent>
         </Card>
-        
-        <div className="flex justify-end gap-4">
+
+        <div className="flex gap-2">
           <Button 
+            onClick={handleSaveCourse}
+            disabled={createMutation.isPending}
+            className="flex items-center"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {createMutation.isPending ? "Création..." : "Créer le cours"}
+          </Button>
+          <Button
             variant="outline"
             onClick={() => navigate("/teacher/courses")}
           >
             Annuler
-          </Button>
-          <Button onClick={handleSaveCourse}>
-            <Save className="h-4 w-4 mr-2" />
-            Enregistrer le cours
           </Button>
         </div>
       </div>

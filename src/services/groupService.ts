@@ -3,9 +3,35 @@ import apiClient from './api';
 export interface Group {
   id: number;
   name: string;
+  cour_id: number;
+  start_date?: string;
+  end_date?: string;
+  creator_id: number;
   description?: string;
+  image?: string;
+  max_students?: number;
   created_at: string;
   updated_at: string;
+  course?: {
+    id: number;
+    title: string;
+    description?: string;
+    price?: number;
+    discount?: number;
+  };
+  creator?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  students?: Array<{
+    id: number;
+    name: string;
+    first_name?: string;
+    last_name?: string;
+    email: string;
+    avatar?: string;
+  }>;
 }
 
 export const getGroups = async () => {
@@ -40,5 +66,10 @@ export const addUserToGroup = async (groupId: number, userId: number) => {
 
 export const removeUserFromGroup = async (groupId: number, userId: number) => {
   const response = await apiClient.post(`/groups/${groupId}/remove-user`, { user_id: userId });
+  return response.data;
+};
+
+export const getGroupsByCreator = async (creatorId: number) => {
+  const response = await apiClient.get(`/groups/creator/${creatorId}`);
   return response.data;
 }; 

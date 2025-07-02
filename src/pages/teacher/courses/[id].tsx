@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getCourse } from "@/services/courseService";
 import { getExam } from "@/services/examService";
@@ -8,12 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, BookOpen, Users, Calendar, Clock, User, FileText, Video, File, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Users, Calendar, Clock, User, FileText, Video, File, CheckCircle, XCircle, Edit, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteCourse } from "@/services/courseService";
 
-const CourseIndex = () => {
+const TeacherCourseView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const courseId = parseInt(id || "0");
 
   // Fetch course data
@@ -46,9 +51,36 @@ const CourseIndex = () => {
     enabled: !!exam?.questions && exam.questions.length > 0,
   });
 
+  // Delete course mutation
+  const deleteMutation = useMutation({
+    mutationFn: deleteCourse,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-courses'] });
+      toast({
+        title: "Cours supprimé",
+        description: "Le cours a été supprimé avec succès.",
+      });
+      navigate("/teacher/courses");
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la suppression du cours.",
+        variant: "destructive",
+      });
+      console.error("Error deleting course:", error);
+    }
+  });
+
+  const handleDeleteCourse = () => {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce cours ?")) {
+      deleteMutation.mutate(courseId);
+    }
+  };
+
   if (isLoadingCourse || (course?.exam?.id && isLoadingExam) || isLoadingQuestions) {
     return (
-      <DashboardLayout userType="admin">
+      <DashboardLayout userType="teacher">
         <div className="space-y-6">
           <div className="flex items-center">
             <Skeleton className="h-10 w-10 mr-4" />
@@ -85,53 +117,74 @@ const CourseIndex = () => {
 
   if (!course) {
     return (
-      <DashboardLayout userType="admin">
+      <DashboardLayout userType="teacher">
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Cours non trouvé</h2>
           <p className="text-gray-600 mb-6">Le cours que vous recherchez n'existe pas.</p>
-          <Button onClick={() => navigate("/admin/courses")}>
-            Retour aux cours
+          <Button onClick={() => navigate("/teacher/courses")}>
+            Retour à mes cours
           </Button>
         </div>
       </DashboardLayout>
     );
   }
 
-  const getStatusBadge = (isAccepted: boolean | null) => {
+  const getStatusBadge = (isAccepted: 0 | 1 | null) => {
     if (isAccepted === null || isAccepted === undefined) {
       return <Badge variant="secondary">En attente</Badge>;
     }
-    if (isAccepted) {
+    if (isAccepted === 1) {
       return <Badge variant="default" className="bg-green-500">Accepté</Badge>;
     }
     return <Badge variant="destructive">Rejeté</Badge>;
   };
 
   return (
-    <DashboardLayout userType="admin">
+    <DashboardLayout userType="teacher">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="mr-4" 
-            onClick={() => navigate("/admin/courses")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-3xl font-bold">{course.name}</h1>
-              {getStatusBadge(course.is_accepted)}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="mr-4" 
+              onClick={() => navigate("/teacher/courses")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h1 className="text-3xl font-bold">{course.name}</h1>
+                {getStatusBadge(course.is_accepted)}
+              </div>
+              <p className="text-gray-500">Détails du cours</p>
             </div>
-            <p className="text-gray-500">Détails du cours</p>
+          </div>
+          
+          <div className="flex gap-2">
+            <Link to={`/teacher/courses/edit/${course.id}`}>
+              <Button variant="outline" className="flex items-center">
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              className="flex items-center text-red-500 border-red-200 hover:bg-red-50"
+              onClick={handleDeleteCourse}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer
+            </Button>
           </div>
         </div>
 
         <Tabs defaultValue="details">
           <TabsList className="mb-6">
             <TabsTrigger value="details">Informations du cours</TabsTrigger>
+            <TabsTrigger value="lessons">Leçons</TabsTrigger>
             <TabsTrigger value="quiz">Quiz</TabsTrigger>
           </TabsList>
           
@@ -159,16 +212,16 @@ const CourseIndex = () => {
                     Créé le {new Date(course.created_at).toLocaleDateString('fr-FR')}
                   </div>
                   <div className="flex items-center">
-                    <User className="h-4 w-4 mr-1" />
-                    {course.creator?.name || `Enseignant ID: ${course.creator_id}`}
-                  </div>
-                  <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
                     {course.lessons?.length || 0} leçons
                   </div>
                   <div className="flex items-center">
                     <Users className="h-4 w-4 mr-1" />
                     {course.speciality?.name || `Spécialité ID: ${course.speciality_id}`}
+                  </div>
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 mr-1" />
+                    {exam ? "Quiz disponible" : "Aucun quiz"}
                   </div>
                   {course.price && (
                     <div className="flex items-center">
@@ -211,118 +264,113 @@ const CourseIndex = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="lessons" className="space-y-6">
             {/* Lessons */}
             <Card>
               <CardHeader>
-                <CardTitle>Leçons du cours</CardTitle>
+                <CardTitle className="flex items-center">
+                  <Video className="h-5 w-5 mr-2" />
+                  Leçons du cours
+                </CardTitle>
                 <CardDescription>
-                  Liste des leçons disponibles pour ce cours
+                  Liste des leçons de ce cours
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {course.lessons && course.lessons.length > 0 ? (
                   <div className="space-y-4">
                     {course.lessons.map((lesson: any, index: number) => (
-                      <div key={lesson.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="h-5 w-5 text-blue-500 mr-2" />
-                              <h3 className="font-medium">
-                                Leçon {index + 1}: {lesson.title}
-                              </h3>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">{lesson.description}</p>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {lesson.duration} minutes
-                              </span>
-                              {lesson.url_video && (
-                                <span className="flex items-center">
-                                  <Video className="h-3 w-3 mr-1" /> Vidéo disponible
-                                </span>
-                              )}
-                              {lesson.url_pdf && (
-                                <span className="flex items-center">
-                                  <File className="h-3 w-3 mr-1" /> PDF disponible
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      <div key={lesson.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">Leçon {index + 1}: {lesson.title}</h4>
+                          <Badge variant="outline">{lesson.duration || 'N/A'} min</Badge>
                         </div>
+                        <p className="text-gray-600 text-sm">{lesson.content}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Aucune leçon trouvée pour ce cours.</p>
-                    <p className="text-sm">Ajoutez des leçons pour commencer.</p>
+                    <File className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Aucune leçon ajoutée à ce cours</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="quiz" className="space-y-6">
             {/* Quiz */}
             <Card>
               <CardHeader>
-                <CardTitle>Quiz du cours</CardTitle>
+                <CardTitle className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Quiz du cours
+                </CardTitle>
                 <CardDescription>
-                  {exam ? `${exam.description} - ${questionsWithAnswers.length} questions` : 'Aucun quiz disponible'}
+                  Questions et réponses du quiz
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {questionsWithAnswers.length > 0 ? (
+                {exam ? (
                   <div className="space-y-6">
-                    {questionsWithAnswers.map((question: any, questionIndex: number) => (
-                      <div key={question.id} className="border rounded-lg p-4">
-                        <div className="flex items-start gap-2 mb-3">
-                          <Badge variant="outline" className="mt-1">
-                            {question.type === 'unique_choice' ? 'Choix unique' : 'Choix multiple'}
-                          </Badge>
-                          <h3 className="font-medium flex-1">
-                            Question {questionIndex + 1}: {question.question}
-                          </h3>
-                        </div>
-                        {question.answers && question.answers.length > 0 ? (
-                          <div className="space-y-2">
-                            {question.answers.map((answer: any) => (
-                              <div 
-                                key={answer.id} 
-                                className={`p-3 rounded-lg border ${
-                                  answer.is_correct === 1
-                                    ? 'bg-green-50 border-green-200' 
-                                    : 'bg-red-50 border-red-200'
-                                }`}
-                              >
-                                <div className="flex items-center">
-                                  {answer.is_correct === 1 ? (
-                                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2">{exam.description}</h4>
+                      <p className="text-sm text-gray-500">
+                        {exam.questions?.length || 0} questions
+                      </p>
+                    </div>
+
+                    {questionsWithAnswers.length > 0 ? (
+                      <div className="space-y-6">
+                        {questionsWithAnswers.map((question: any, index: number) => (
+                          <div key={question.id} className="border rounded-lg p-4">
+                            <h5 className="font-medium mb-3">
+                              Question {index + 1}: {question.question}
+                            </h5>
+                            <div className="space-y-2">
+                              {question.answers?.map((answer: any) => (
+                                <div 
+                                  key={answer.id} 
+                                  className={`flex items-center p-2 rounded ${
+                                    answer.is_correct 
+                                      ? 'bg-green-50 border border-green-200' 
+                                      : 'bg-gray-50 border border-gray-200'
+                                  }`}
+                                >
+                                  {answer.is_correct ? (
+                                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
                                   ) : (
-                                    <XCircle className="h-4 w-4 text-red-600 mr-2" />
+                                    <XCircle className="h-4 w-4 text-gray-400 mr-2" />
                                   )}
-                                  <span className={answer.is_correct === 1 ? 'text-green-800' : 'text-red-800'}>
+                                  <span className={answer.is_correct ? 'text-green-700' : 'text-gray-600'}>
                                     {answer.answer}
                                   </span>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-gray-500 text-sm">Aucune réponse disponible pour cette question.</p>
-                        )}
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Aucune question disponible pour ce quiz</p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Aucun quiz trouvé pour ce cours.</p>
-                    <p className="text-sm">Créez un quiz pour évaluer les étudiants.</p>
+                    <p>Aucun quiz créé pour ce cours</p>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => navigate(`/teacher/create-quiz?courseId=${course.id}`)}
+                    >
+                      Créer un quiz
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -334,4 +382,4 @@ const CourseIndex = () => {
   );
 };
 
-export default CourseIndex; 
+export default TeacherCourseView; 

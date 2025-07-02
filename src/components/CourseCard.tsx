@@ -15,6 +15,7 @@ interface CourseCardProps {
   students: number;
   lessons: number;
   image: string;
+  linkPath?: string;
 }
 
 const CourseCard = ({
@@ -26,7 +27,8 @@ const CourseCard = ({
   duration,
   students,
   lessons,
-  image
+  image,
+  linkPath
 }: CourseCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
@@ -66,7 +68,7 @@ const CourseCard = ({
         </div>
       </CardContent>
       <CardFooter>
-        <Link to={`/course/${id}`} className="w-full">
+        <Link to={linkPath || `/course/${id}`} className="w-full">
           <Button className="w-full bg-primary hover:bg-primary-dark">
             Voir le cours
           </Button>

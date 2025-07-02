@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,14 +29,19 @@ interface Answer {
 
 const CreateQuiz = () => {
   const navigate = useNavigate();
+  const { id: quizId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const courseIdFromQuery = searchParams.get('courseId');
+  
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState(courseIdFromQuery || "");
   const [quizTitle, setQuizTitle] = useState("");
   const [quizDescription, setQuizDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentTab, setCurrentTab] = useState("overview");
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+  const [isEditMode, setIsEditMode] = useState(!!quizId);
 
   // Function to load teacher's courses
   const loadCourses = async () => {
@@ -61,9 +65,24 @@ const CreateQuiz = () => {
       });
 
       // Filter courses created by the current teacher
-      const teacherCourses = response.data.filter((course: any) => 
+      let teacherCourses = response.data.filter((course: any) => 
         course.creator_id === user.id
       );
+
+      // If not in edit mode, filter out courses that already have quizzes
+      if (!isEditMode) {
+        teacherCourses = teacherCourses.filter((course: any) => !course.exam);
+      } else {
+        // In edit mode, include the current course but exclude other courses with exams
+        teacherCourses = teacherCourses.filter((course: any) => {
+          // Include courses without exams
+          if (!course.exam) return true;
+          // Include the current course (even if it has an exam)
+          if (quizId && course.exam && course.exam.id === parseInt(quizId)) return true;
+          // Exclude other courses with exams
+          return false;
+        });
+      }
       
       setAvailableCourses(teacherCourses);
     } catch (error) {
@@ -76,10 +95,66 @@ const CreateQuiz = () => {
     }
   };
 
-  // Load courses when component mounts
-  useState(() => {
+  // Function to load existing quiz data when in edit mode
+  const loadQuizData = async () => {
+    if (!quizId) return;
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        toast({
+          title: "Erreur d'authentification",
+          description: "Vous devez être connecté pour accéder à cette page.",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      const response = await axios.get(`http://localhost:8000/api/exams/${quizId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const quizData = response.data;
+      console.log("Quiz data loaded:", quizData); // Debug log
+      
+      setQuizTitle(quizData.title || "");
+      setQuizDescription(quizData.description || "");
+      setSelectedCourse(quizData.cours_id?.toString() || "");
+      
+      // Load questions if they exist
+      if (quizData.questions && quizData.questions.length > 0) {
+        const formattedQuestions = quizData.questions.map((q: any) => ({
+          id: q.id.toString(), // Use actual database ID
+          question: q.question,
+          type: q.type || 'unique_choice',
+          answers: q.answers?.map((a: any) => ({
+            id: a.id.toString(), // Use actual database ID
+            answer: a.answer,
+            isCorrect: a.is_correct || false
+          })) || []
+        }));
+        setQuestions(formattedQuestions);
+      }
+    } catch (error) {
+      console.error("Failed to load quiz data:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les données du quiz.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load courses and quiz data when component mounts
+  useEffect(() => {
     loadCourses();
-  });
+    if (isEditMode) {
+      loadQuizData();
+    }
+  }, [isEditMode, quizId]);
 
   // Add a new question
   const addQuestion = () => {
@@ -274,57 +349,194 @@ const CreateQuiz = () => {
     try {
       const token = localStorage.getItem('authToken');
       
-      // First create the exam
-      const examResponse = await axios.post('http://localhost:8000/api/exams', {
-        description: quizDescription,
-        cour_id: selectedCourse,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      if (isEditMode && quizId) {
+        // Update existing exam metadata
+        await axios.put(`http://localhost:8000/api/exams/${quizId}`, {
+          title: quizTitle,
+          description: quizDescription,
+          cours_id: selectedCourse,
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        // Get existing questions to compare with current questions
+        const existingQuestionsResponse = await axios.get(`http://localhost:8000/api/exams/${quizId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const existingQuestions = existingQuestionsResponse.data.questions || [];
+
+        // Process each question
+        for (const question of questions) {
+          console.log(`Processing question: ${question.id}`, question); // Debug log
+          
+          if (question.id.startsWith('q-')) {
+            // This is a new question (frontend-generated ID)
+            console.log(`Creating new question: ${question.question}`); // Debug log
+            const questionResponse = await axios.post('http://localhost:8000/api/questions', {
+              exams_id: quizId,
+              question: question.question,
+              type: question.type,
+            }, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            
+            const questionId = questionResponse.data.id;
+            console.log(`Created question with ID: ${questionId}`); // Debug log
+            
+            // Create all answers for the new question
+            for (const answer of question.answers) {
+              console.log(`Creating answer: ${answer.answer}`); // Debug log
+              await axios.post('http://localhost:8000/api/answers', {
+                question_id: questionId,
+                answer: answer.answer,
+                is_correct: answer.isCorrect,
+              }, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+            }
+          } else {
+            // This is an existing question (has numeric ID)
+            const questionId = parseInt(question.id);
+            const existingQuestion = existingQuestions.find((q: any) => q.id === questionId);
+            
+            if (existingQuestion) {
+              console.log(`Updating existing question: ${questionId}`); // Debug log
+              // Update the question
+              await axios.put(`http://localhost:8000/api/questions/${questionId}`, {
+                question: question.question,
+                type: question.type,
+              }, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+
+              // Get existing answers for this question
+              const existingAnswers = existingQuestion.answers || [];
+              
+              // Process each answer
+              for (const answer of question.answers) {
+                if (answer.id.startsWith('a-')) {
+                  // This is a new answer (frontend-generated ID)
+                  console.log(`Creating new answer: ${answer.answer}`); // Debug log
+                  await axios.post('http://localhost:8000/api/answers', {
+                    question_id: questionId,
+                    answer: answer.answer,
+                    is_correct: answer.isCorrect,
+                  }, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                } else {
+                  // This is an existing answer (has numeric ID)
+                  const answerId = parseInt(answer.id);
+                  console.log(`Updating existing answer: ${answerId}`); // Debug log
+                  await axios.put(`http://localhost:8000/api/answers/${answerId}`, {
+                    answer: answer.answer,
+                    is_correct: answer.isCorrect,
+                  }, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                }
+              }
+
+              // Delete answers that were removed
+              const currentAnswerIds = question.answers.map(a => a.id.startsWith('a-') ? null : parseInt(a.id)).filter(id => id !== null);
+              for (const existingAnswer of existingAnswers) {
+                if (!currentAnswerIds.includes(existingAnswer.id)) {
+                  console.log(`Deleting answer: ${existingAnswer.id}`); // Debug log
+                  await axios.delete(`http://localhost:8000/api/answers/${existingAnswer.id}`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                }
+              }
+            }
+          }
         }
-      });
-      
-      const examId = examResponse.data.id;
-      
-      // Create all questions for the exam
-      for (const question of questions) {
-        const questionResponse = await axios.post('http://localhost:8000/api/questions', {
-          exams_id: examId,
-          question: question.question,
-          type: question.type,
+
+        // Delete questions that were removed
+        const currentQuestionIds = questions.map(q => q.id.startsWith('q-') ? null : parseInt(q.id)).filter(id => id !== null);
+        for (const existingQuestion of existingQuestions) {
+          if (!currentQuestionIds.includes(existingQuestion.id)) {
+            await axios.delete(`http://localhost:8000/api/questions/${existingQuestion.id}`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+          }
+        }
+        
+        toast({
+          title: "Quiz mis à jour avec succès",
+          description: "Votre quiz a été modifié.",
+        });
+      } else {
+        // Create new exam
+        const examResponse = await axios.post('http://localhost:8000/api/exams', {
+          title: quizTitle,
+          description: quizDescription,
+          cours_id: selectedCourse,
         }, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
         
-        const questionId = questionResponse.data.id;
+        const examId = examResponse.data.id;
         
-        // Create all answers for the question
-        for (const answer of question.answers) {
-          await axios.post('http://localhost:8000/api/answers', {
-            question_id: questionId,
-            answer: answer.answer,
-            is_correct: answer.isCorrect,
+        // Create all questions for the exam
+        for (const question of questions) {
+          const questionResponse = await axios.post('http://localhost:8000/api/questions', {
+            exams_id: examId,
+            question: question.question,
+            type: question.type,
           }, {
             headers: {
               Authorization: `Bearer ${token}`
             }
           });
+          
+          const questionId = questionResponse.data.id;
+          
+          // Create all answers for the question
+          for (const answer of question.answers) {
+            await axios.post('http://localhost:8000/api/answers', {
+              question_id: questionId,
+              answer: answer.answer,
+              is_correct: answer.isCorrect,
+            }, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+          }
         }
+        
+        toast({
+          title: "Quiz créé avec succès",
+          description: "Votre quiz a été enregistré.",
+        });
       }
-      
-      toast({
-        title: "Quiz créé avec succès",
-        description: "Votre quiz a été enregistré.",
-      });
       
       navigate('/teacher/quizzes');
     } catch (error) {
-      console.error("Failed to create quiz:", error);
+      console.error("Failed to save quiz:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le quiz. Veuillez réessayer.",
+        description: `Impossible de ${isEditMode ? 'mettre à jour' : 'créer'} le quiz. Veuillez réessayer.`,
         variant: "destructive",
       });
     } finally {
@@ -336,29 +548,40 @@ const CreateQuiz = () => {
     <DashboardLayout userType="teacher">
       <div className="space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Créer un nouveau quiz</h1>
+          <h1 className="text-3xl font-bold">
+            {isEditMode ? "Modifier le quiz" : "Créer un nouveau quiz"}
+          </h1>
           <div className="flex gap-2">
             <Button onClick={() => navigate('/teacher/quizzes')} variant="outline">
               Annuler
             </Button>
             <Button onClick={handleSubmit} disabled={isLoading} className="bg-primary hover:bg-primary-dark">
               <Save className="mr-2 h-4 w-4" />
-              {isLoading ? "Enregistrement..." : "Enregistrer le quiz"}
+              {isLoading ? "Enregistrement..." : (isEditMode ? "Mettre à jour le quiz" : "Enregistrer le quiz")}
             </Button>
           </div>
         </div>
         
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-              {questions.map((q, index) => (
-                <TabsTrigger key={q.id} value={q.id}>
-                  Question {index + 1}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <Button onClick={addQuestion} size="sm" variant="outline">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-full sm:w-auto overflow-x-auto">
+                <TabsList className="flex-nowrap min-w-max">
+                  <TabsTrigger value="overview" className="whitespace-nowrap">Vue d'ensemble</TabsTrigger>
+                  {questions.map((q, index) => (
+                    <TabsTrigger key={q.id} value={q.id} className="whitespace-nowrap">
+                      Q{index + 1}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {questions.length > 0 && (
+                <div className="text-sm text-gray-500 whitespace-nowrap">
+                  {questions.length} question{questions.length > 1 ? 's' : ''}
+                </div>
+              )}
+            </div>
+            <Button onClick={addQuestion} size="sm" variant="outline" className="shrink-0">
               <PlusCircle className="mr-2 h-4 w-4" />
               Ajouter une question
             </Button>
@@ -372,7 +595,11 @@ const CreateQuiz = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="course">Cours</Label>
-                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <Select 
+                    value={selectedCourse} 
+                    onValueChange={setSelectedCourse}
+                    disabled={!!courseIdFromQuery}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un cours" />
                     </SelectTrigger>
@@ -384,6 +611,11 @@ const CreateQuiz = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {courseIdFromQuery && (
+                    <p className="text-sm text-gray-500">
+                      Cours pré-sélectionné depuis la page d'édition du cours
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
