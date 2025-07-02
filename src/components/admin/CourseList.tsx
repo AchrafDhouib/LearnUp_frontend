@@ -136,6 +136,16 @@ const CourseList = ({ courses }: CourseListProps) => {
             <p className="text-xs text-gray-400 mt-1">
               Par: {course.creator?.name || `Enseignant ID: ${course.creator_id}`}
             </p>
+            {course.price && (
+              <p className="text-xs text-gray-400 mt-1">
+                Prix: {course.price}€
+                {course.discount && (
+                  <span className="text-green-600 ml-1">
+                    (-{course.discount}%)
+                  </span>
+                )}
+              </p>
+            )}
           </div>
           <div className="flex space-x-2">
             <Button 

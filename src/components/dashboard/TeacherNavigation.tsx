@@ -1,5 +1,5 @@
 
-import { Home, BookUser, FileText, GraduationCap, Settings, PlusCircle } from "lucide-react";
+import { Home, BookUser, FileText, GraduationCap, Settings, PlusCircle, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ const TeacherNavigation = ({ baseUrl, collapsed }: TeacherNavigationProps) => {
     { icon: <Home className="h-4 w-4" />, label: "Tableau de bord", href: `${baseUrl}/dashboard` },
     { icon: <BookUser className="h-4 w-4" />, label: "Mes cours", href: `${baseUrl}/courses` },
     { icon: <FileText className="h-4 w-4" />, label: "Mes quiz", href: `${baseUrl}/quizzes` },
+    { icon: <Users className="h-4 w-4" />, label: "Mes groupes", href: `${baseUrl}/groups` },
     { icon: <GraduationCap className="h-4 w-4" />, label: "Étudiants", href: `${baseUrl}/students` },
     { icon: <Settings className="h-4 w-4" />, label: "Paramètres", href: `${baseUrl}/settings` },
     { icon: <PlusCircle className="h-4 w-4" />, label: "Nouveau cours", href: `${baseUrl}/create-course` },

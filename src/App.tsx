@@ -52,11 +52,17 @@ import TeacherSettings from "./pages/teacher/Settings";
 import CreateTeacherCourse from "./pages/teacher/CreateCourse";
 import CreateQuiz from "./pages/teacher/CreateQuiz";
 import TeacherRegister from "./pages/TeacherRegister";
+import TeacherCourseView from "./pages/teacher/courses/[id]";
+import TeacherEditCourse from "./pages/teacher/courses/edit/[id]";
+import TeacherQuizIndex from "./pages/teacher/TeacherQuizIndex";
+import TeacherGroupsPage from "./pages/teacher/GroupsPage";
 
 // Legal pages
 import TermsOfService from "./pages/legal/TermsOfService";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import CookiePolicy from "./pages/legal/CookiePolicy";
+import StudentCourseView from "./pages/student/StudentCourseView";
+import StudentCourseLesson from "./pages/student/StudentCourseLesson";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +86,8 @@ const App = () => (
             {/* Student routes */}
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/courses" element={<StudentCourses />} />
+            <Route path="/student/courses/:id" element={<StudentCourseView />} />
+            <Route path="/student/courses/:id/lesson/:lessonId" element={<StudentCourseLesson />} />
             <Route path="/student/quizzes" element={<StudentQuizzes />} />
             <Route path="/student/certificates" element={<StudentCertificates />} />
             <Route path="/student/profile" element={<StudentProfile />} />
@@ -94,6 +102,10 @@ const App = () => (
             <Route path="/teacher/create-course" element={<CreateTeacherCourse />} />
             <Route path="/teacher/create-quiz" element={<CreateQuiz />} />
             <Route path="/teacher/quizzes/:id/edit" element={<CreateQuiz />} />
+            <Route path="/teacher/quizzes/:id" element={<TeacherQuizIndex />} />
+            <Route path="/teacher/courses/:id" element={<TeacherCourseView />} />
+            <Route path="/teacher/courses/edit/:id" element={<TeacherEditCourse />} />
+            <Route path="/teacher/groups" element={<TeacherGroupsPage />} />
             
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />

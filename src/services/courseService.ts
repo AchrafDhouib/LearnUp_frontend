@@ -66,3 +66,17 @@ export const getLessons = async (courseId: number) => {
   const response = await apiClient.get(`/courses/${courseId}/lessons`);
   return response.data;
 };
+
+export const getCoursesByCreator = async (creatorId: number) => {
+  const response = await apiClient.get(`/courses/creator/${creatorId}`);
+  return response.data;
+};
+
+export const getCoursesByCreatorQuery = async (creatorId?: number) => {
+  if (creatorId) {
+    const response = await apiClient.get(`/courses?creator_id=${creatorId}`);
+    return response.data;
+  }
+  const response = await apiClient.get('/courses');
+  return response.data;
+};

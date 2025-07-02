@@ -22,6 +22,8 @@ export interface Course {
   creator_id: number;
   description: string;
   image: string;
+  price?: number;
+  discount?: number;
   is_accepted?: 0 | 1 | null;
   created_at: string;
   updated_at: string;
