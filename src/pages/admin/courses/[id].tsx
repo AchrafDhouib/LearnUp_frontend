@@ -172,7 +172,7 @@ const CourseIndex = () => {
                   </div>
                   {course.price && (
                     <div className="flex items-center">
-                      <span className="font-medium">Prix: {course.price}€</span>
+                      <span className="font-medium">Prix: {course.price}DT</span>
                       {course.discount && (
                         <span className="text-green-600 ml-1">
                           (-{course.discount}%)

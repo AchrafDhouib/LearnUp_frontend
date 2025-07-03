@@ -28,6 +28,7 @@ const CreateCourse = () => {
     image: "",
     price: "",
     discount: "",
+    required_score: "",
   });
 
   const [lessons, setLessons] = useState([{ title: "", content: "", duration: "" }]);
@@ -98,9 +99,11 @@ const CreateCourse = () => {
 
     const courseData = {
       ...formData,
+      speciality_id: parseInt(formData.speciality_id),
       creator_id: teacherId,
       price: formData.price ? parseFloat(formData.price) : null,
       discount: formData.discount ? parseFloat(formData.discount) : null,
+      required_score: formData.required_score ? parseFloat(formData.required_score) : null,
     };
 
     createMutation.mutate(courseData);
@@ -209,7 +212,7 @@ const CreateCourse = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="cours_url">URL du matériel</Label>
+                <Label htmlFor="cours_url">URL du matière</Label>
                 <Input 
                   id="cours_url"
                   name="cours_url"
@@ -235,7 +238,7 @@ const CreateCourse = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="price">Prix (optionnel)</Label>
+                <Label htmlFor="price">Prix </Label>
                 <Input 
                   id="price"
                   name="price"
@@ -248,7 +251,7 @@ const CreateCourse = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="discount">Remise (%) (optionnel)</Label>
+                <Label htmlFor="discount">Remise (%) </Label>
                 <Input 
                   id="discount"
                   name="discount"
@@ -261,6 +264,21 @@ const CreateCourse = () => {
                   placeholder="0.00"
                 />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="required_score">Score requis pour réussir (%) </Label>
+              <Input 
+                id="required_score"
+                name="required_score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={formData.required_score}
+                onChange={handleInputChange}
+                placeholder="70.00"
+              />
             </div>
           </CardContent>
         </Card>

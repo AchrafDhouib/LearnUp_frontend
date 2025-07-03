@@ -195,7 +195,7 @@ const TeacherCourses = () => {
                           <span className="mr-4">{course.lessons?.length || 0} leçons</span>
                           {course.price && (
                             <span className="mr-4">
-                              Prix: {course.price}€
+                              Prix: {course.price}DT
                               {course.discount && (
                                 <span className="text-green-600 ml-1">
                                   (-{course.discount}%)

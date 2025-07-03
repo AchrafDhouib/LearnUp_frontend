@@ -196,10 +196,10 @@ const CourseView = () => {
                     {hasDiscount ? (
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-lg text-green-600">
-                          {discountedPrice?.toFixed(2)}€
+                          {discountedPrice?.toFixed(2)}DT
                         </span>
                         <span className="text-sm text-gray-400 line-through">
-                          {numericPrice.toFixed(2)}€
+                          {numericPrice.toFixed(2)}DT
                         </span>
                         <Badge className="bg-red-500 text-white">
                           -{course.discount}%
@@ -207,7 +207,7 @@ const CourseView = () => {
                       </div>
                     ) : (
                       <span className="font-medium text-lg">
-                        {numericPrice.toFixed(2)}€
+                        {numericPrice.toFixed(2)}DT
                       </span>
                     )}
                   </div>
@@ -259,8 +259,8 @@ const CourseView = () => {
                     >
                       {numericPrice !== undefined && numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0 
                         ? (hasDiscount 
-                            ? `S'inscrire - ${discountedPrice?.toFixed(2)}€` 
-                            : `S'inscrire - ${numericPrice.toFixed(2)}€`)
+                            ? `S'inscrire - ${discountedPrice?.toFixed(2)}DT` 
+                            : `S'inscrire - ${numericPrice.toFixed(2)}DT`)
                         : 'S\'inscrire gratuitement'
                       }
                     </Button>

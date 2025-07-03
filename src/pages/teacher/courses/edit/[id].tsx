@@ -32,6 +32,7 @@ const TeacherEditCourse = () => {
     image: "",
     price: "",
     discount: "",
+    required_score: "",
   });
 
   const [lessons, setLessons] = useState([{ 
@@ -84,6 +85,7 @@ const TeacherEditCourse = () => {
         image: course.image || "",
         price: course.price ? String(course.price) : "",
         discount: course.discount ? String(course.discount) : "",
+        required_score: course.required_score ? String(course.required_score) : "",
       });
       
       if (course.lessons && course.lessons.length > 0) {
@@ -274,6 +276,7 @@ const TeacherEditCourse = () => {
       speciality_id: parseInt(formData.speciality_id),
       price: formData.price ? parseFloat(formData.price) : null,
       discount: formData.discount ? parseFloat(formData.discount) : null,
+      required_score: formData.required_score ? parseFloat(formData.required_score) : null,
     };
     
     updateMutation.mutate(courseData);
@@ -417,7 +420,7 @@ const TeacherEditCourse = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="cours_url">URL du matériel</Label>
+                      <Label htmlFor="cours_url">URL du matière</Label>
                       <Input
                         id="cours_url"
                         name="cours_url"
@@ -443,7 +446,7 @@ const TeacherEditCourse = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="price">Prix (optionnel)</Label>
+                      <Label htmlFor="price">Prix </Label>
                       <Input
                         id="price"
                         name="price"
@@ -456,7 +459,7 @@ const TeacherEditCourse = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="discount">Remise (%) (optionnel)</Label>
+                      <Label htmlFor="discount">Remise (%) </Label>
                       <Input
                         id="discount"
                         name="discount"
@@ -469,6 +472,21 @@ const TeacherEditCourse = () => {
                         placeholder="0.00"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="required_score">Score requis pour réussir (%) </Label>
+                    <Input
+                      id="required_score"
+                      name="required_score"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.required_score}
+                      onChange={handleInputChange}
+                      placeholder="70.00"
+                    />
                   </div>
 
                   <div className="flex gap-2">
@@ -576,7 +594,7 @@ const TeacherEditCourse = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="new-lesson-video">URL Vidéo (optionnel)</Label>
+                        <Label htmlFor="new-lesson-video">URL Vidéo </Label>
                         <Input
                           id="new-lesson-video"
                           type="url"
@@ -587,7 +605,7 @@ const TeacherEditCourse = () => {
                       </div>
                       
                       <div>
-                        <Label htmlFor="new-lesson-pdf">URL PDF (optionnel)</Label>
+                        <Label htmlFor="new-lesson-pdf">URL PDF </Label>
                         <Input
                           id="new-lesson-pdf"
                           type="url"
@@ -654,7 +672,7 @@ const TeacherEditCourse = () => {
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <Label htmlFor="edit-lesson-video">URL Vidéo (optionnel)</Label>
+                              <Label htmlFor="edit-lesson-video">URL Vidéo </Label>
                               <Input
                                 id="edit-lesson-video"
                                 type="url"
@@ -665,7 +683,7 @@ const TeacherEditCourse = () => {
                             </div>
                             
                             <div>
-                              <Label htmlFor="edit-lesson-pdf">URL PDF (optionnel)</Label>
+                              <Label htmlFor="edit-lesson-pdf">URL PDF </Label>
                               <Input
                                 id="edit-lesson-pdf"
                                 type="url"
