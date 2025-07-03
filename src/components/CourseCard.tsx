@@ -128,15 +128,15 @@ const CourseCard = ({
                   {hasDiscount ? (
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold text-green-600">
-                        {discountedPrice?.toFixed(2)}€
+                        {discountedPrice?.toFixed(2)}DT
                       </span>
                       <span className="text-sm text-gray-400 line-through">
-                        {numericPrice.toFixed(2)}€
+                        {numericPrice.toFixed(2)}DT
                       </span>
                     </div>
                   ) : (
                     <span className="text-lg font-bold text-gray-900">
-                      {numericPrice.toFixed(2)}€
+                      {numericPrice.toFixed(2)}DT
                     </span>
                   )}
                 </div>
@@ -155,8 +155,8 @@ const CourseCard = ({
             <Button className="w-full bg-primary hover:bg-primary-dark transition-colors">
               {numericPrice !== undefined && numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0 
                 ? (hasDiscount 
-                    ? `Voir le cours - ${discountedPrice?.toFixed(2)}€` 
-                    : `Voir le cours - ${numericPrice.toFixed(2)}€`)
+                    ? `Voir le cours - ${discountedPrice?.toFixed(2)}DT` 
+                    : `Voir le cours - ${numericPrice.toFixed(2)}DT`)
                 : 'Voir le cours gratuitement'
               }
             </Button>

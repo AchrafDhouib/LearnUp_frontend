@@ -363,7 +363,7 @@ const TeacherGroupsPage = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="image">URL de l'image (optionnel)</Label>
+                  <Label htmlFor="image">URL de l'image </Label>
                   <Input
                     id="image"
                     value={formData.image}
@@ -435,7 +435,7 @@ const TeacherGroupsPage = () => {
                     const discount = group.course?.discount || 0;
                     const finalPrice = coursePrice * (1 - discount / 100);
                     return sum + finalPrice;
-                  }, 0).toFixed(2)}€
+                  }, 0).toFixed(2)}DT
                 </p>
               </div>
             </CardContent>
@@ -510,7 +510,7 @@ const TeacherGroupsPage = () => {
                         <TableCell>
                           {group.course?.price ? (
                             <span className="font-medium">
-                              {group.course.price}€
+                              {group.course.price}DT
                               {group.course.discount && (
                                 <span className="text-sm text-green-600 ml-1">
                                   (-{group.course.discount}%)
@@ -650,7 +650,7 @@ const TeacherGroupsPage = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="edit-image">URL de l'image (optionnel)</Label>
+                <Label htmlFor="edit-image">URL de l'image </Label>
                 <Input
                   id="edit-image"
                   value={formData.image}
@@ -816,7 +816,7 @@ const TeacherGroupsPage = () => {
                       <div>
                         <span className="font-medium">Prix:</span> {selectedGroup.course?.price ? (
                           <span>
-                            {selectedGroup.course.price}€
+                            {selectedGroup.course.price}DT
                             {selectedGroup.course.discount && (
                               <span className="text-sm text-green-600 ml-1">
                                 (-{selectedGroup.course.discount}%)

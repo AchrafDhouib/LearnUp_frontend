@@ -39,6 +39,7 @@ const courseSchema = z.object({
   cours_url: z.string().optional(),
   price: z.string().optional(),
   discount: z.string().optional(),
+  required_score: z.string().optional(),
 });
 
 interface CourseFormProps {
@@ -63,6 +64,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
       cours_url: "",
       price: "",
       discount: "",
+      required_score: "",
     },
   });
 
@@ -126,6 +128,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
         cours_url: courseData.cours_url || "",
         price: courseData.price ? String(courseData.price) : "",
         discount: courseData.discount ? String(courseData.discount) : "",
+        required_score: courseData.required_score ? String(courseData.required_score) : "",
       });
     }
   }, [courseData, isEdit, form, specialties, teachers]);
@@ -180,6 +183,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
       creator_id: parseInt(data.creator_id),
       price: data.price ? parseFloat(data.price) : null,
       discount: data.discount ? parseFloat(data.discount) : null,
+      required_score: data.required_score ? parseFloat(data.required_score) : null,
     };
 
     if (isEdit && courseId) {
@@ -373,7 +377,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Prix (optionnel)</FormLabel>
+                      <FormLabel>Prix </FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -393,7 +397,7 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                   name="discount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Remise (%) (optionnel)</FormLabel>
+                      <FormLabel>Remise (%) </FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -409,6 +413,27 @@ const CourseForm = ({ courseId, isEdit = false }: CourseFormProps) => {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="required_score"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Score requis pour réussir (%) </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01" 
+                        placeholder="70.00" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

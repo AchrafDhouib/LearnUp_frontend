@@ -184,7 +184,7 @@ const CourseLessonForm = ({ courseId, lessons = [], onLessonsUpdated }: CourseLe
                 name="url_video"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL Vidéo (optionnel)</FormLabel>
+                    <FormLabel>URL Vidéo </FormLabel>
                     <FormControl>
                       <Input placeholder="https://example.com/video.mp4" {...field} />
                     </FormControl>
@@ -198,7 +198,7 @@ const CourseLessonForm = ({ courseId, lessons = [], onLessonsUpdated }: CourseLe
                 name="url_pdf"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL PDF (optionnel)</FormLabel>
+                    <FormLabel>URL PDF </FormLabel>
                     <FormControl>
                       <Input placeholder="https://example.com/document.pdf" {...field} />
                     </FormControl>
