@@ -102,7 +102,7 @@ const CourseIndex = () => {
       return <Badge variant="secondary">En attente</Badge>;
     }
     if (isAccepted) {
-      return <Badge variant="default" className="bg-green-500">Accepté</Badge>;
+      return <Badge variant="default" className="bg-green-500">Approuvé</Badge>;
     }
     return <Badge variant="destructive">Rejeté</Badge>;
   };

@@ -176,7 +176,7 @@ const CoursesIndex = () => {
                         En attente ({getStatusCount("pending")})
                       </SelectItem>
                       <SelectItem value="accepted">
-                        Acceptés ({getStatusCount("accepted")})
+                        Approuvés ({getStatusCount("accepted")})
                       </SelectItem>
                       <SelectItem value="rejected">
                         Rejetés ({getStatusCount("rejected")})

@@ -74,7 +74,7 @@ const AdminLogin = () => {
         <div className="flex justify-center mb-6">
           <Link to="/" className="flex items-center">
             <BookOpen className="h-8 w-8 text-primary" />
-            <span className="ml-2 text-2xl font-bold">LearnCertify</span>
+            <span className="ml-2 text-2xl font-bold">LearnUp</span>
           </Link>
         </div>
         

@@ -3,8 +3,14 @@ import apiClient from './api';
 import { Specialty } from '@/types/specialty';
 
 export const getSpecialties = async () => {
-  const response = await apiClient.get('/specialities');
-  return response.data;
+  try {
+    const response = await apiClient.get('/specialities');
+    console.log('Specialties API response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching specialties:', error);
+    throw error;
+  }
 };
 
 export const getSpecialty = async (id: number) => {

@@ -12,7 +12,7 @@ interface User {
   last_name: string;
   email: string;
   avatar: string;
-  role: string[];
+  role: string;
 }
 
 interface AuthContextType {
@@ -142,10 +142,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !user.role) return false;
     
     if (Array.isArray(role)) {
-      return role.some(r => user.role.includes(r));
+      return role.some(r => user.role === r);
     }
     
-    return user.role.includes(role);
+    return user.role === role;
   };
 
   return (

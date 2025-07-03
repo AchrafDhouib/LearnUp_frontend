@@ -64,7 +64,7 @@ const Navbar = () => {
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
             <BookOpen className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">LearnCertify</span>
+            <span className="text-xl font-bold">LearnUp</span>
           </Link>
           
           {/* Main Navigation Links */}

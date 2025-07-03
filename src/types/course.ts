@@ -31,4 +31,7 @@ export interface Course {
   creator?: User;
   exam?: any;
   lessons?: Lesson[];
+  students_count?: number;
+  rating?: number;
+  total_reviews?: number;
 }

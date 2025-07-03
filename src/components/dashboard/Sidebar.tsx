@@ -36,7 +36,7 @@ const Sidebar = ({
       <div className="flex items-center justify-between h-16 px-4 border-b">
         <Link to="/" className={cn("flex items-center", collapsed && "justify-center w-full")}>
           <BookOpen className="h-6 w-6 text-primary" />
-          {!collapsed && <span className="ml-2 font-bold text-lg">LearnCertify</span>}
+          {!collapsed && <span className="ml-2 font-bold text-lg">LearnUp</span>}
         </Link>
         <button 
           onClick={() => setCollapsed(!collapsed)}

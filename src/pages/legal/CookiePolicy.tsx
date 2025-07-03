@@ -74,7 +74,7 @@ const CookiePolicy = () => {
             <section>
               <h2 className="text-xl font-semibold mb-3">5. Gérer vos préférences de cookies</h2>
               <p className="text-gray-700">
-                Vous pouvez définir ou modifier vos préférences web pour accepter ou refuser les cookies en visitant la page des préférences en matière de cookies sur notre site web. Si vous choisissez de refuser certains cookies, vous pouvez toujours utiliser notre site web, mais votre accès à certaines fonctionnalités et zones de notre site web peut être limité.
+                Vous pouvez définir ou modifier vos préférences web pour approuver ou refuser les cookies en visitant la page des préférences en matière de cookies sur notre site web. Si vous choisissez de refuser certains cookies, vous pouvez toujours utiliser notre site web, mais votre accès à certaines fonctionnalités et zones de notre site web peut être limité.
               </p>
               <p className="text-gray-700 mt-2">
                 De plus, différents navigateurs offrent différentes méthodes pour bloquer et supprimer les cookies utilisés par les sites web. Vous pouvez modifier les paramètres de votre navigateur pour bloquer/supprimer les cookies.

@@ -90,7 +90,7 @@ const StudentCourseView = () => {
 
   const handleExamClick = () => {
     if (course?.exam) {
-      navigate(`/quiz/${course.exam.id}`);
+      navigate(`/student/pass-quiz/${course.id}`);
     }
   };
 
