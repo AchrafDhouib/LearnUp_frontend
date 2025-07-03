@@ -63,6 +63,8 @@ import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import CookiePolicy from "./pages/legal/CookiePolicy";
 import StudentCourseView from "./pages/student/StudentCourseView";
 import StudentCourseLesson from "./pages/student/StudentCourseLesson";
+import StudentPassQuiz from "./pages/student/StudentPassQuiz";
+import ExamResult from "./pages/student/ExamResult";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/courses" element={<Courses />} />
+            <Route path="/course/:id" element={<CourseView />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/teacher/register" element={<TeacherRegister />} />
@@ -88,7 +91,9 @@ const App = () => (
             <Route path="/student/courses" element={<StudentCourses />} />
             <Route path="/student/courses/:id" element={<StudentCourseView />} />
             <Route path="/student/courses/:id/lesson/:lessonId" element={<StudentCourseLesson />} />
+            <Route path="/student/pass-quiz/:courseId" element={<StudentPassQuiz />} />
             <Route path="/student/quizzes" element={<StudentQuizzes />} />
+            <Route path="/student/exam-result/:passedExamId" element={<ExamResult />} />
             <Route path="/student/certificates" element={<StudentCertificates />} />
             <Route path="/student/profile" element={<StudentProfile />} />
             <Route path="/student/settings" element={<StudentSettings />} />
@@ -125,10 +130,10 @@ const App = () => (
             <Route path="/admin/users/:id" element={<UserDetails />} />
             <Route path="/admin/settings" element={<SettingsPage />} />
             
-            <Route path="/course/:id" element={<CourseView />} />
             <Route path="/quiz/:id" element={<QuizPage />} />
             <Route path="/quiz/:id/results" element={<QuizResults />} />
             <Route path="/certificate/:id" element={<CertificatePage />} />
+            <Route path="/student/certificate/:id" element={<CertificatePage />} />
             
             {/* Legal pages */}
             <Route path="/terms-of-service" element={<TermsOfService />} />

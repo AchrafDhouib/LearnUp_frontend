@@ -6,23 +6,68 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, Trophy, Clock } from "lucide-react";
-import { quizzes, courses } from "@/data/mockData";
+import { FileText, Search, Trophy, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getMyCourses } from "@/services/studentCourseService";
+import { getPassedExams } from "@/services/passedExamService";
 
 const StudentQuizzes = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [studentQuizzes] = useState([
-    { ...quizzes[0], status: "completed", score: 85, completedAt: new Date(2023, 3, 15) },
-    { ...quizzes[1], status: "pending", dueDate: new Date(2023, 4, 30) },
-  ]);
 
-  const filteredQuizzes = studentQuizzes.filter(quiz => 
-    quiz.title.toLowerCase().includes(searchQuery.toLowerCase())
+  // Get enrolled courses with exams
+  const { data: enrolledCourses } = useQuery({
+    queryKey: ['student-courses'],
+    queryFn: getMyCourses
+  });
+
+  // Get passed exams
+  const { data: passedExams } = useQuery({
+    queryKey: ['passed-exams'],
+    queryFn: getPassedExams
+  });
+
+  // Filter courses that have exams
+  const coursesWithExams = enrolledCourses?.filter(course => course.exam) || [];
+  
+  // Separate quizzes by status
+  const pendingQuizzes = coursesWithExams.filter(course => 
+    !passedExams?.some(passed => passed.exam_id === course.exam?.id)
+  );
+  
+  const completedQuizzes = coursesWithExams
+    .map(course => {
+      const passedExam = passedExams?.find(passed => passed.exam_id === course.exam?.id);
+      if (passedExam && passedExam.score >= (course.required_score || 70)) {
+        return { ...course, passedExam };
+      }
+      return null;
+    })
+    .filter(Boolean);
+  
+  const failedQuizzes = coursesWithExams
+    .map(course => {
+      const passedExam = passedExams?.find(passed => passed.exam_id === course.exam?.id);
+      if (passedExam && passedExam.score < (course.required_score || 70)) {
+        return { ...course, passedExam };
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  const filteredPendingQuizzes = pendingQuizzes.filter(quiz => 
+    quiz.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredCompletedQuizzes = completedQuizzes.filter(quiz => 
+    quiz.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredFailedQuizzes = failedQuizzes.filter(quiz => 
+    quiz.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const pendingQuizzes = filteredQuizzes.filter(quiz => quiz.status === "pending");
-  const completedQuizzes = filteredQuizzes.filter(quiz => quiz.status === "completed");
+
 
   return (
     <DashboardLayout userType="student">
@@ -47,45 +92,42 @@ const StudentQuizzes = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="pending">À réaliser</TabsTrigger>
             <TabsTrigger value="completed">Complétés</TabsTrigger>
+            <TabsTrigger value="failed">À repasser</TabsTrigger>
           </TabsList>
           
           <TabsContent value="pending">
-            {pendingQuizzes.length > 0 ? (
+            {filteredPendingQuizzes.length > 0 ? (
               <div className="space-y-4">
-                {pendingQuizzes.map((quiz) => {
-                  const relatedCourse = courses.find(c => c.id === quiz.courseId);
-                  
-                  return (
-                    <Card key={quiz.id}>
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-semibold">{quiz.title}</h3>
-                              <Badge variant="secondary">À réaliser</Badge>
-                            </div>
-                            <p className="text-sm text-gray-500 mt-1">
-                              Cours: {relatedCourse?.title}
-                            </p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="flex items-center text-sm text-gray-500">
-                                <FileText className="h-4 w-4 mr-1" />
-                                {quiz.questions.length} questions
-                              </span>
-                              <span className="flex items-center text-sm text-amber-600">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {quiz.dueDate.toLocaleDateString()}
-                              </span>
-                            </div>
+                {filteredPendingQuizzes.map((course) => (
+                  <Card key={course.id}>
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold">{course.exam?.title || 'Quiz Final'}</h3>
+                            <Badge variant="secondary">À réaliser</Badge>
                           </div>
-                          <Link to={`/quiz/${quiz.id}`}>
-                            <Button>Commencer le quiz</Button>
-                          </Link>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Cours: {course.name}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="flex items-center text-sm text-gray-500">
+                              <FileText className="h-4 w-4 mr-1" />
+                              {course.exam?.questions?.length || 0} questions
+                            </span>
+                            <span className="flex items-center text-sm text-amber-600">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {course.exam?.duration || 30} min
+                            </span>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <Link to={`/student/pass-quiz/${course.id}`}>
+                          <Button>Commencer le quiz</Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
               <Card>
@@ -106,44 +148,52 @@ const StudentQuizzes = () => {
           </TabsContent>
           
           <TabsContent value="completed">
-            {completedQuizzes.length > 0 ? (
+            {filteredCompletedQuizzes.length > 0 ? (
               <div className="space-y-4">
-                {completedQuizzes.map((quiz) => {
-                  const relatedCourse = courses.find(c => c.id === quiz.courseId);
-                  
-                  return (
-                    <Card key={quiz.id}>
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-semibold">{quiz.title}</h3>
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                Complété
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-500 mt-1">
-                              Cours: {relatedCourse?.title}
-                            </p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="flex items-center text-sm text-gray-500">
-                                <FileText className="h-4 w-4 mr-1" />
-                                {quiz.questions.length} questions
-                              </span>
-                              <span className="flex items-center text-sm text-green-600">
-                                <Trophy className="h-4 w-4 mr-1" />
-                                Score: {quiz.score}%
-                              </span>
-                            </div>
+                {filteredCompletedQuizzes.map((course) => (
+                  <Card key={course.id}>
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold">{course.exam?.title || 'Quiz Final'}</h3>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Complété
+                            </Badge>
                           </div>
-                          <Link to={`/quiz/${quiz.id}/results`}>
-                            <Button variant="outline">Voir les résultats</Button>
-                          </Link>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Cours: {course.name}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="flex items-center text-sm text-gray-500">
+                              <FileText className="h-4 w-4 mr-1" />
+                              {course.exam?.questions?.length || 0} questions
+                            </span>
+                            <span className="flex items-center text-sm text-green-600">
+                              <Trophy className="h-4 w-4 mr-1" />
+                              Score: {course.passedExam?.score || 0}%
+                            </span>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <div className="flex gap-2">
+                          {course.passedExam && (
+                            <Link to={`/student/exam-result/${course.passedExam.id}`}>
+                              <Button variant="outline">Voir résultats</Button>
+                            </Link>
+                          )}
+                          <Link to={`/student/pass-quiz/${course.id}`}>
+                            <Button variant="outline">Repasser</Button>
+                          </Link>
+                          {course.passedExam?.certification && (
+                            <Link to={`/student/certificate/${course.passedExam.certification.id}`}>
+                              <Button>Voir certificat</Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
               <Card>
@@ -156,6 +206,65 @@ const StudentQuizzes = () => {
                     {searchQuery 
                       ? `Aucun quiz ne correspond à "${searchQuery}"`
                       : "Vous n'avez pas encore complété de quiz"
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="failed">
+            {filteredFailedQuizzes.length > 0 ? (
+              <div className="space-y-4">
+                {filteredFailedQuizzes.map((course) => (
+                  <Card key={course.id}>
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold">{course.exam?.title || 'Quiz Final'}</h3>
+                            <Badge variant="destructive">À repasser</Badge>
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Cours: {course.name}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="flex items-center text-sm text-gray-500">
+                              <FileText className="h-4 w-4 mr-1" />
+                              {course.exam?.questions?.length || 0} questions
+                            </span>
+                            <span className="flex items-center text-sm text-red-600">
+                              <AlertTriangle className="h-4 w-4 mr-1" />
+                              Score: {course.passedExam?.score || 0}% (Requis: {course.required_score || 70}%)
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {course.passedExam && (
+                            <Link to={`/student/exam-result/${course.passedExam.id}`}>
+                              <Button variant="outline">Voir résultats</Button>
+                            </Link>
+                          )}
+                          <Link to={`/student/pass-quiz/${course.id}`}>
+                            <Button variant="destructive">Repasser le quiz</Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-10">
+                  <AlertTriangle className="h-16 w-16 text-gray-300 mb-4" />
+                  <h3 className="text-xl font-medium text-gray-700">
+                    {searchQuery ? "Aucun quiz trouvé" : "Aucun quiz à repasser"}
+                  </h3>
+                  <p className="text-gray-500 text-center mt-2">
+                    {searchQuery 
+                      ? `Aucun quiz ne correspond à "${searchQuery}"`
+                      : "Vous n'avez pas de quiz à repasser pour le moment"
                     }
                   </p>
                 </CardContent>

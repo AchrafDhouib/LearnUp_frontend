@@ -54,8 +54,8 @@ const CourseList = ({ courses }: CourseListProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       toast({
-        title: "Cours accepté",
-        description: "Le cours a été accepté avec succès.",
+        title: "Cours Approuvé",
+        description: "Le cours a été Approuvé avec succès.",
       });
     },
     onError: (error) => {
@@ -93,7 +93,7 @@ const CourseList = ({ courses }: CourseListProps) => {
       return <Badge variant="secondary">En attente</Badge>;
     }
     if (isAccepted === 1) {
-      return <Badge variant="default" className="bg-green-500">Accepté</Badge>;
+      return <Badge variant="default" className="bg-green-500">Approuvé</Badge>;
     }
     return <Badge variant="destructive">Rejeté</Badge>;
   };
@@ -178,7 +178,7 @@ const CourseList = ({ courses }: CourseListProps) => {
               disabled={acceptMutation.isPending || course.is_accepted === 1}
             >
               <Check className="h-4 w-4 mr-1" />
-              {course.is_accepted === 1 ? "Accepté" : "Accepter"}
+              {course.is_accepted === 1 ? "Approuvé" : "approuver"}
             </Button>
             <Button 
               variant="outline" 

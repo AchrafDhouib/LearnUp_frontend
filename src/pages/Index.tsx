@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, CheckCircle, GraduationCap, UserPlus } from "lucide-react";
+import { BookOpen, CheckCircle, GraduationCap, UserPlus, Star, Users, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import CourseCard from "@/components/CourseCard";
 import CourseCategoryCard from "@/components/CourseCategoryCard";
-import { courses, courseCategories } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { getCourses } from "@/services/courseService";
+import { getSpecialties } from "@/services/specialtyService";
+
 
 const features = [
   {
@@ -26,8 +29,73 @@ const features = [
   },
 ];
 
+const testimonials = [
+  {
+    name: "Sophie L.",
+    role: "Développeuse web",
+    image: "https://randomuser.me/api/portraits/women/44.jpg",
+    text: "J'ai pu développer considérablement mes compétences grâce aux cours disponibles sur cette plateforme. Les certifications m'ont aidée à décrocher un nouveau poste !"
+  },
+  {
+    name: "Thomas D.",
+    role: "Étudiant en informatique",
+    image: "https://randomuser.me/api/portraits/men/32.jpg",
+    text: "Les quiz interactifs m'ont permis de consolider mes connaissances. Le format des cours est parfait pour apprendre à mon rythme."
+  },
+  {
+    name: "Julie M.",
+    role: "Chef de projet digital",
+    image: "https://randomuser.me/api/portraits/women/68.jpg",
+    text: "En tant qu'enseignante sur la plateforme, j'apprécie la facilité avec laquelle je peux créer et partager du contenu avec mes étudiants."
+  }
+];
+
 const Index = () => {
-  const [featuredCourses] = useState(courses.slice(0, 3));
+  // Get courses from API
+  const { data: courses = [], isLoading: coursesLoading } = useQuery({
+    queryKey: ['courses'],
+    queryFn: getCourses
+  });
+
+  // Get specialities from API
+  const { data: specialities = [], isLoading: specialitiesLoading } = useQuery({
+    queryKey: ['specialities'],
+    queryFn: getSpecialties
+  });
+
+  // Get top 3 courses by student count (as a proxy for popularity)
+  // Filter only accepted courses and sort by student count
+  const topRatedCourses = courses
+    .filter(course => course.is_accepted === 1) // Only show accepted courses
+    .sort((a, b) => {
+      const aStudents = a.students_count || 0;
+      const bStudents = b.students_count || 0;
+      
+      // If both have students, sort by student count
+      if (aStudents > 0 || bStudents > 0) {
+        return bStudents - aStudents;
+      }
+      
+      // If neither has students, sort by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    })
+    .slice(0, 3);
+
+  // Debug: Log the first course to see its structure
+  if (courses.length > 0) {
+    console.log('First course data:', courses[0]);
+    console.log('Top rated courses:', topRatedCourses);
+  }
+
+
+
+  // Transform specialities to match CourseCategoryCard interface
+  const courseCategories = specialities.map(specialty => ({
+    id: specialty.id.toString(),
+    name: specialty.name,
+    description: `Cours spécialisés en ${specialty.name}`,
+    icon: "BookOpen"
+  }));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -59,7 +127,7 @@ const Index = () => {
           </div>
           <div className="lg:w-1/2">
             <img 
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTh1LfufSj-2o4xYJhJV7tWSkZGT8qbYhgBbA&s" 
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop&crop=center" 
               alt="E-learning Platform" 
               className="w-full h-auto rounded-lg shadow-xl"
             />
@@ -70,17 +138,31 @@ const Index = () => {
       {/* Categories Section */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Explorez nos catégories</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">Explorez nos spécialités</h2>
           <p className="text-gray-600 text-center mb-12">Découvrez une large gamme de cours dans différents domaines</p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courseCategories.map((category) => (
-              <CourseCategoryCard
-                key={category.id}
-                {...category}
-                courseCount={courses.filter((course) => course.category === category.name).length}
-              />
-            ))}
-          </div>
+          {specialitiesLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {courseCategories.map((category) => (
+                <CourseCategoryCard
+                  key={category.id}
+                  {...category}
+                  courseCount={courses.filter((course) => course.speciality?.name === category.name).length}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -115,11 +197,52 @@ const Index = () => {
               </Button>
             </Link>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCourses.map((course) => (
-              <CourseCard key={course.id} {...course} />
-            ))}
-          </div>
+          {coursesLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3 mb-4"></div>
+                    <div className="flex justify-between">
+                      <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {topRatedCourses.length > 0 ? (
+                topRatedCourses.map((course) => (
+                  <CourseCard 
+                    key={course.id}
+                    id={course.id}
+                    title={course.name}
+                    description={course.description}
+                    instructor={course.creator?.name || `Enseignant ${course.creator_id}`}
+                    category={course.speciality?.name || `Spécialité ${course.speciality_id}`}
+                    duration={`${Math.ceil((course.lessons?.length || 0) * 0.5)}h estimées`}
+                    students={course.students_count || 0}
+                    lessons={course.lessons?.length || 0}
+                    image={course.image || "https://placehold.co/600x400?text=Course"}
+                    price={course.price}
+                    discount={course.discount}
+                    created_at={course.created_at}
+                    rating={course.rating}
+                    totalReviews={course.total_reviews}
+                  />
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-8">
+                  <p className="text-gray-500">Aucun cours disponible pour le moment</p>
+                </div>
+              )}
+            </div>
+          )}
           <div className="text-center mt-12">
             <Link to="/register">
               <Button size="lg" className="bg-primary hover:bg-primary-dark"> 
@@ -135,26 +258,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Ce que disent nos utilisateurs</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sophie L.",
-                role: "Développeuse web",
-                image: "https://randomuser.me/api/portraits/women/44.jpg",
-                text: "J'ai pu développer considérablement mes compétences grâce aux cours disponibles sur cette plateforme. Les certifications m'ont aidée à décrocher un nouveau poste !"
-              },
-              {
-                name: "Thomas D.",
-                role: "Étudiant en informatique",
-                image: "https://randomuser.me/api/portraits/men/32.jpg",
-                text: "Les quiz interactifs m'ont permis de consolider mes connaissances. Le format des cours est parfait pour apprendre à mon rythme."
-              },
-              {
-                name: "Julie M.",
-                role: "Chef de projet digital",
-                image: "https://randomuser.me/api/portraits/women/68.jpg",
-                text: "En tant qu'enseignante sur la plateforme, j'apprécie la facilité avec laquelle je peux créer et partager du contenu avec mes étudiants."
-              }
-            ].map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <Card key={index} className="border-none shadow hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex items-center mb-4">
@@ -243,6 +347,5 @@ const Index = () => {
     </div>
   );
 };
-
 
 export default Index;

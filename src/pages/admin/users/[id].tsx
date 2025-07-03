@@ -286,7 +286,7 @@ const UserDetails = () => {
                               <p className="text-sm text-gray-600">{course.description}</p>
                             </div>
                             <Badge variant={course.is_accepted === 1 ? "default" : course.is_accepted === 0 ? "destructive" : "secondary"}>
-                              {course.is_accepted === 1 ? 'Accepté' : course.is_accepted === 0 ? 'Rejeté' : 'En attente'}
+                              {course.is_accepted === 1 ? 'Approuvé' : course.is_accepted === 0 ? 'Rejeté' : 'En attente'}
                             </Badge>
                           </div>
                         ))}

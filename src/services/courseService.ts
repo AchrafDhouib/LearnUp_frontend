@@ -6,6 +6,11 @@ export const getCourses = async () => {
   return response.data;
 };
 
+export const getAcceptedCourses = async () => {
+  const response = await apiClient.get('/courses/accepted');
+  return response.data;
+};
+
 export const getCourse = async (id: number | string) => {
   const response = await apiClient.get(`/courses/${id}`);
   return response.data;

@@ -1,19 +1,27 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import CertificateCard from "@/components/CertificateCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { GraduationCap, Search } from "lucide-react";
-import { certificates } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { getCertifications } from "@/services/certificationService";
 
 const StudentCertificates = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [userCertificates] = useState(certificates);
 
-  const filteredCertificates = userCertificates.filter(cert => 
-    cert.courseTitle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get certifications
+  const { data: certifications, isLoading } = useQuery({
+    queryKey: ['certifications'],
+    queryFn: getCertifications
+  });
+
+  // Filter certificates based on search query
+  const filteredCertificates = certifications?.filter(cert => 
+    cert.course_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    cert.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    cert.certificate_number?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   return (
     <DashboardLayout userType="student">
@@ -34,17 +42,25 @@ const StudentCertificates = () => {
           />
         </div>
 
-        {filteredCertificates.length > 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-500 mt-2">Chargement des certificats...</p>
+            </CardContent>
+          </Card>
+        ) : filteredCertificates.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredCertificates.map((cert) => (
               <CertificateCard 
                 key={cert.id}
                 id={cert.id}
-                courseTitle={cert.courseTitle}
-                studentName={cert.studentName}
-                issueDate={cert.issueDate}
-                instructor={cert.instructor}
-                onDownload={() => console.log(`Téléchargement du certificat ${cert.id}`)}
+                courseTitle={cert.course_name}
+                studentName={cert.student_name}
+                issueDate={cert.issued_date}
+                instructor={cert.instructor_name}
+                score={cert.score}
+                certificateNumber={cert.certificate_number}
               />
             ))}
           </div>
